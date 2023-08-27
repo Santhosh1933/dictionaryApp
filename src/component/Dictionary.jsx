@@ -1,39 +1,47 @@
 import React, { useEffect, useState } from "react";
-
+import { debounce } from "lodash";
+import { Loading } from "./Loading";
 export const Dictionary = () => {
   const [dictData, setDictData] = useState([]);
   const [title, setTitle] = useState("Words");
+  const [word, setWord] = useState("");
+  const [err, setErr] = useState(false);
   async function networkCallFunction() {
     const response = await fetch(
-      "https://api.dictionaryapi.dev/api/v2/entries/en/hello"
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
     );
 
     if (response.ok) {
+      setErr(false);
       const data = await response.json();
       setDictData(data[0]);
-      console.log(data[0]);
       setTitle(data[0].word);
+      document.title="Explore "+data[0].word
     } else {
-      console.log("Error:", response.status);
+      setErr(true);
     }
   }
+
+  useEffect(() => {
+    networkCallFunction();
+  }, [word]);
   function playAudio() {
-    const audio = new Audio(dictData.phonetics[1].audio);
+    const audio = new Audio(
+      dictData.phonetics[1].audio && dictData.phonetics[1].audio
+    );
     audio.play();
   }
+  const handleText = debounce((text) => {
+    setWord(text);
+  }, 1000);
   return (
-    <div className="dark:text-white w-full sm:w-3/4 mx-auto flex justify-center items-center">
-      <div className="mt-16 flex flex-col gap-16 justify-center items-center">
-        <header
-          onClick={() => {
-            networkCallFunction();
-          }}
-          className="text-darkSecondary text-3xl text-center py-2 tracking-wider border-b-2 border-b-darkSecondary"
-        >
+    <div className="dark:text-white w-full  mx-auto flex justify-center items-center">
+      <div className="mt-16 flex w-[95%] sm:w-3/4 flex-col gap-16 justify-center">
+        <header className="text-darkSecondary text-4xl text-center py-2 tracking-wider">
           Explore {title}
         </header>
-        <div className="flex flex-col gap-16">
-          <div className="flex items-center gap-8  mx-auto border-b-2 border-b-darkSecondary sm:w-[500px]">
+        <div className="flex flex-col gap-16 min-h-[50vh]">
+          <div className="flex items-center gap-8 w-full mx-auto border-b-2 border-b-darkSecondary sm:w-[500px]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -50,10 +58,16 @@ export const Dictionary = () => {
             </svg>
             <input
               type="text"
-              className=" w-full py-2 outline-none bg-transparent caret-darkSecondary"
+              className=" py-2 outline-none bg-transparent caret-darkSecondary"
+              placeholder="Start Explore your words..."
+              onChange={(e) => {
+                handleText(e.target.value);
+              }}
             />
           </div>
-          {dictData.length != 0 ? (
+          {err ? (
+            <p>No Word Found</p>
+          ) : dictData.length != 0 ? (
             <div className="gap-8 flex-col flex">
               <p onClick={playAudio} className="cursor-pointer">
                 Touch to Hear{" "}
@@ -84,6 +98,12 @@ export const Dictionary = () => {
                       <li>
                         <p className="text-slate-500">
                           {definition.definition}
+                          <li>
+                            {definition.example && (
+                              <span className="text-slate-300">Example : </span>
+                            )}
+                            {definition.example}
+                          </li>
                         </p>
                       </li>
                     ))}
@@ -93,7 +113,7 @@ export const Dictionary = () => {
                         {synonym}
                       </p>
                     ))}
-                    {data.antonyms.length === 0 ? "" : "antonyms :"}
+                    {data.antonyms.length === 0 ? "" : "Antonyms :"}
                     {data.antonyms.map((antonym, i) => (
                       <p key={i} className="text-slate-500">
                         {antonym}
@@ -104,7 +124,7 @@ export const Dictionary = () => {
               </div>
             </div>
           ) : (
-            <p>Type Any thing to search ...</p>
+            <></>
           )}
         </div>
       </div>
