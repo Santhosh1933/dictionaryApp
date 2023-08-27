@@ -16,7 +16,7 @@ export const Dictionary = () => {
       const data = await response.json();
       setDictData(data[0]);
       setTitle(data[0].word);
-      document.title="Explore "+data[0].word
+      document.title = "Explore " + data[0].word;
     } else {
       setErr(true);
     }
@@ -26,10 +26,15 @@ export const Dictionary = () => {
     networkCallFunction();
   }, [word]);
   function playAudio() {
-    const audio = new Audio(
-      dictData.phonetics[1].audio && dictData.phonetics[1].audio
-    );
-    audio.play();
+    const synth = window.speechSynthesis;
+    let utterance = new SpeechSynthesisUtterance();
+
+    if (synth.speaking) {
+      synth.cancel();
+    }
+
+    utterance.text = word;
+    synth.speak(utterance);
   }
   const handleText = debounce((text) => {
     setWord(text);
